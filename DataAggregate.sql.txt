@@ -1,0 +1,33 @@
+--Use master;
+--create database CitiBikes;
+--go
+--use citibikes;
+--go
+
+;with allDatasets as
+(
+select *,MONTH([Start Time]) MonthPeriod, ROW_NUMBER() Over (Order By [Start Time]) SN
+From Jan2017 
+union all
+select *,MONTH([Start Time]) MonthPeriod, ROW_NUMBER() Over (Order By [Start Time]) SN
+From Feb2017 
+union all
+select *,MONTH([Start Time]) MonthPeriod, ROW_NUMBER() Over (Order By [Start Time]) SN
+From Mar2017 
+)
+,AggregateData as
+(
+Select *, Count(*) Over (Partition By MonthPeriod) TotalMonthlyRides
+From allDatasets
+)
+,DeltaMonthlyRides as
+(
+Select *, (Select Max(TotalMonthlyRides) From AggregateData A where A.MonthPeriod + 1 = AG.MonthPeriod) PreviousTotalMonthlyRides
+From AggregateData AG
+)
+Select *, (TotalMonthlyRides -PreviousTotalMonthlyRides) ChangeInMonthlyRides
+From DeltaMonthlyRides
+--% change
+--12926
+-- /
+--39153
